@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState } from "react";
+import Button from "./Button";
 
 function Einnahme() {
   const [guthaben, setGuthaben] = useState(null); // Zustand für Guthaben
@@ -42,17 +43,18 @@ function Einnahme() {
   return (
     <div className="flex flex-col justify-center items-center pt-14">
       <h3 className="my-5 text-white">Gesamt</h3>
-      <div className="flex w-56 h-56 rounded-full bg-slate-800/25 justify-center items-center text-4xl text-green-500">
+      <div className="flex w-48 h-48 rounded-full bg-slate-800/25 justify-center items-center text-3xl text-[#00FF37]">
         {guthaben} €
       </div>
-      <h3 className="my-5 text-white">Ausgaben</h3>
-      <div className="flex w-64 h-20 bg-slate-800/25 justify-center items-center text-4xl text-red-500">
-        1000 €
+      <Button />
+      {/* <h3 className="my-5 text-white">Ausgaben</h3>
+      <div className="flex w-64 h-20 bg-slate-800/25 justify-center items-center text-4xl text-[#DA1009]">
+        0 €
       </div>
       <h3 className="my-5 text-white">Einnnahmen</h3>
-      <div className="flex w-64 h-20 bg-slate-800/25 justify-center items-center text-4xl text-green-500">
-        1000 €
-      </div>
+      <div className="flex w-64 h-20 bg-slate-800/25 justify-center items-center text-4xl text-[#00FF37]">
+        0 €
+      </div> */}
     </div>
   );
 }
