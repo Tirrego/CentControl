@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="bg-slate-900 h-screen">
+        <div className="bg-slate-900">
         <Header />
         {children}
         </div>
