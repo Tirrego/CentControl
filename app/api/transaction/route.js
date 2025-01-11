@@ -2,6 +2,7 @@ import dbConnect from "../../../lib/mongoose";
 import Transaction from "../../../models/Transaction";
 import User from "../../../models/User";
 
+// POST Handler zum Hinzufügen einer Transaktion
 export async function POST(req) {
   try {
     const id = "67813eb85712ee7896043f77"; // Benutzer-ID (dies kann auch dynamisch gemacht werden)
@@ -73,6 +74,44 @@ export async function POST(req) {
       }),
       {
         status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Fehler:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+// GET Handler zum Abrufen aller Transaktionen für den Benutzer
+export async function GET(req) {
+  try {
+    const id = "67813eb85712ee7896043f77"; // Benutzer-ID (dies kann auch dynamisch gemacht werden)
+    console.log("API-Request gestartet");
+
+    // Verbindung zur Datenbank herstellen
+    await dbConnect();
+    console.log("Datenbank verbunden");
+
+    // Alle Transaktionen des Benutzers abrufen
+    const transactions = await Transaction.find();
+
+    if (!transactions || transactions.length === 0) {
+      throw new Error("Keine Transaktionen gefunden.");
+    }
+
+    console.log("Transaktionen abgerufen:", transactions);
+
+    // Erfolgreiche Antwort zurückgeben
+    return new Response(
+      JSON.stringify({
+        transactions,
+      }),
+      {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
