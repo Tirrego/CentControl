@@ -1,19 +1,52 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
-  const [amount, SetAmount] = useState("");
-  const [transactionType, setTransactionType] = useState(null); // Fügen Sie State für den Transaktionstyp hinzu
+  const [amount, setAmount] = useState("");
+  const [transactionType, setTransactionType] = useState(null);
+  const [details, setDetails] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const [accounts, setAccounts] = useState([]); // Zustand für die Konten
   const router = useRouter();
 
-  // Funktion zum Absenden des Formulars
+  // Konten laden
+  useEffect(() => {
+    async function fetchAccounts() {
+      try {
+        const userId = "67813eb85712ee7896043f77"; // Benutzer-ID (Beispiel)
+        const response = await fetch(`/api/user/account?userId=${userId}`, {
+          method: "GET",
+        });
+
+        if (!response.ok) {
+          throw new Error("Fehler beim Abrufen der Konten");
+        }
+
+        const data = await response.json();
+        setAccounts(data.accounts || []); // Konten setzen
+      } catch (err) {
+        console.log(err.message);
+      }
+    }
+
+    fetchAccounts();
+  }, []);
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    const regex = /^\d*\.?\d{0,2}$/;
+
+    if (regex.test(value)) {
+      setAmount(value);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Überprüfen, ob Betrag und Transaktionstyp ausgewählt sind
-    if (!amount || !transactionType) {
-      alert("Bitte gib einen Betrag ein und wähle eine Transaktion aus.");
+
+    if (!amount || !transactionType || !selectedAccount) {
+      alert("Bitte gib einen Betrag ein, wähle eine Transaktion und ein Konto aus.");
       return;
     }
 
@@ -21,15 +54,19 @@ export default function Page() {
       const response = await fetch("/api/transaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parseFloat(amount), transactionType }), // Senden Sie auch den Transaktionstyp
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          transactionType,
+          details,
+          account: selectedAccount,
+        }),
       });
 
       if (!response.ok) {
         throw new Error("Etwas ist schiefgelaufen.");
       }
 
-      // Navigieren Sie zurück zur Startseite nach erfolgreichem Absenden
-      router.push("/");
+      router.push("/"); // Weiterleitung nach erfolgreichem Absenden
     } catch (error) {
       console.log(error);
     }
@@ -39,7 +76,7 @@ export default function Page() {
     <div className="flex flex-row justify-center">
       <form onSubmit={handleSubmit} className="flex flex-col max-w-sm">
         <h3 className="text-2xl text-white text-center mt-6">Transaktion</h3>
-        
+
         <div className="mt-5">
           <label className="text-white" htmlFor="amount">
             Betrag
@@ -47,10 +84,32 @@ export default function Page() {
           <input
             className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring"
             id="amount"
-            onChange={(e) => SetAmount(e.target.value)}
-            type="number"
+            onChange={handleAmountChange}
+            type="text"
             value={amount}
-          ></input>
+          />
+        </div>
+
+        {/* Dropdown-Menü für Konten */}
+        <div className="mt-4">
+          <label className="text-white" htmlFor="account">
+            Konto auswählen
+          </label>
+          <select
+            id="account"
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+            className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring"
+          >
+            <option value="" disabled>
+              Bitte ein Konto auswählen
+            </option>
+            {accounts.map((account, index) => (
+              <option key={index} value={account.name}>
+                {account.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Buttons für die Auswahl des Transaktionstyps */}
@@ -74,6 +133,18 @@ export default function Page() {
           >
             Ausgabe
           </button>
+        </div>
+
+        <div>
+          <label className="text-white" htmlFor="details">
+            Details
+          </label>
+          <input
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            id="details"
+            className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring"
+          />
         </div>
 
         {/* Absenden Button */}
