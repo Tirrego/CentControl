@@ -2,9 +2,21 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Zustand für das Menü
+
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log("Logged out");
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+    }
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen); // Menü öffnen oder schließen
@@ -67,6 +79,13 @@ export default function Header() {
               className="bg-green-600 hover:bg-green-700 rounded-lg py-3 px-6 text-center transition-all"
             >
               Transaktionen
+            </Link>
+            <Link
+              href="/transaktionen"
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 rounded-lg py-3 px-6 text-center transition-all"
+            >
+              Logout
             </Link>
           </div>
         </div>

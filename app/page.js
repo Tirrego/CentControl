@@ -1,13 +1,14 @@
 import Image from "next/image"
-import Header from "@/components/Header";
 import Einnahme from "@/components/Einnahme";
-import Button from "@/components/Button";
+import ProtectedRoute from "@/components/ProtectedRoute";
+
 
 export default function Home() {
   return (
+    <ProtectedRoute>
     <div>
-    
-    <Einnahme />
+      <Einnahme />
     </div>
+    </ProtectedRoute>
   );
 }
