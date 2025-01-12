@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]); // Zustand für die Transaktionen
@@ -42,6 +43,7 @@ export default function Transactions() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="pt-14 px-5">
       <h3 className="text-2xl text-white mb-6">Transaktionsübersicht</h3>
 
@@ -76,5 +78,6 @@ export default function Transactions() {
         </table>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

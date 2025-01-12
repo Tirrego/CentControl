@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState([]);
@@ -56,6 +57,7 @@ export default function AccountsPage() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="flex flex-col items-center">
       <h1 className="text-2xl font-bold mb-6 text-white mt-5">Konten</h1>
 
@@ -96,5 +98,6 @@ export default function AccountsPage() {
         </button>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
