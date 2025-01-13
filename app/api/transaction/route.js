@@ -46,7 +46,7 @@ export async function POST(req) {
     await dbConnect(); // Verbindung zur Datenbank herstellen
 
     // Transaktionsdetails und Benutzer-ID aus der Anfrage extrahieren
-    const { amount, type, details, userId, accountName } = await req.json(); // `accountName` für das benutzte Konto
+    const { amount, transactionType, details, userId, accountName } = await req.json(); // `accountName` für das benutzte Konto
 
     // Überprüfen, ob die Benutzer-ID existiert
     const user = await User.findOne({ user: userId });
@@ -61,17 +61,13 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Account nicht gefunden" }), { status: 404 });
     }
 
-    if(type) {
-          // Balance des gefundenen Accounts erhöhen
-    account.balance += amount;
+    if(transactionType) {
 
-    // Benutzerguthaben ebenfalls aktualisieren
+    account.balance += amount;
     user.guthaben += amount;
     } else {
-          // Balance des gefundenen Accounts erhöhen
-    account.balance -= amount;
 
-    // Benutzerguthaben ebenfalls aktualisieren
+    account.balance -= amount;
     user.guthaben -= amount;
 
     }
@@ -80,7 +76,7 @@ export async function POST(req) {
     const newTransaction = new Transaction({
       accounts: accountName, // Hier kannst du das Konto speichern, auf dem die Transaktion ausgeführt wurde
       amount,
-      type,
+      type : transactionType,
       details,
       user: user._id, // Verknüpft die Transaktion mit dem Benutzer
     });
