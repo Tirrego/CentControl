@@ -61,11 +61,20 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Account nicht gefunden" }), { status: 404 });
     }
 
-    // Balance des gefundenen Accounts erhöhen
+    if(type) {
+          // Balance des gefundenen Accounts erhöhen
     account.balance += amount;
 
     // Benutzerguthaben ebenfalls aktualisieren
     user.guthaben += amount;
+    } else {
+          // Balance des gefundenen Accounts erhöhen
+    account.balance -= amount;
+
+    // Benutzerguthaben ebenfalls aktualisieren
+    user.guthaben -= amount;
+
+    }
 
     // Neue Transaktion erstellen und Benutzer referenzieren
     const newTransaction = new Transaction({
