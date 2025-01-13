@@ -2,124 +2,90 @@ import dbConnect from "../../../lib/mongoose";
 import Transaction from "../../../models/Transaction";
 import User from "../../../models/User";
 
-// POST Handler zum Hinzufügen einer Transaktion
-export async function POST(req) {
+export async function GET(req) {
   try {
-    const id = "67813eb85712ee7896043f77"; // Benutzer-ID (dies kann auch dynamisch gemacht werden)
-    console.log("API-Request gestartet");
-
-    // Verbindung zur Datenbank herstellen
     await dbConnect();
-    console.log("Datenbank verbunden");
 
-    // Daten aus dem Request-Body lesen
-    const body = await req.json();
-    console.log("Request Body:", body);
+    // Benutzer-ID aus den Anfrageparametern extrahieren
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
-    const { amount, transactionType, details, account } = body;
-
-    // Überprüfen, ob ein gültiger Betrag und Typ vorliegen
-    if (!amount || !transactionType || !account) {
-      throw new Error("Invalid transaction data");
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Benutzer-ID erforderlich" }),
+        { status: 400 }
+      );
     }
 
-    // Neues Dokument für die Transaktion erstellen
-    const transaction = new Transaction({
-      amount,
-      type: transactionType,
-      userId: id,
-      details: details,
-    });
-
-    await transaction.save();
-    console.log("Transaktion gespeichert:", transaction);
-
-    // Benutzer finden und Guthaben aktualisieren
-    const user = await User.findById(id);
-
+    // Benutzer anhand der ID finden
+    const user = await User.findOne({ user: userId });
     if (!user) {
-      throw new Error("User not found");
+      return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), {
+        status: 404,
+      });
     }
 
-    // Guthaben im allgemeinen User-Objekt aktualisieren
-    if (transactionType === "add") {
-      user.guthaben += amount; // Einnahme -> Guthaben des Users erhöhen
-    } else if (transactionType === "sub") {
-      user.guthaben -= amount; // Ausgabe -> Guthaben des Users verringern
-    } else {
-      throw new Error("Invalid transaction type");
-    }
+    // Transaktionen des Benutzers abrufen
+    const transactions = await Transaction.find({ user: user._id });
 
-    // Jetzt das Konto 'Bargeld' aktualisieren
-    const accountToUpdate = user.accounts.find(acc => acc.name === account);
-    if (accountToUpdate) {
-      if (transactionType === "add") {
-        accountToUpdate.balance += amount; // Einnahme -> Bargeld-Konto erhöhen
-      } else if (transactionType === "sub") {
-        accountToUpdate.balance -= amount; // Ausgabe -> Bargeld-Konto verringern
-      }
-    }
-
-    // Benutzer mit aktualisiertem Guthaben und Konto speichern
-    await user.save();
-    console.log("Benutzer-Guthaben und Bargeld-Konto aktualisiert:", user.guthaben, accountToUpdate.balance);
-
-    // Erfolgreiche Antwort zurückgeben
     return new Response(
-      JSON.stringify({
-        message: "Transaction added",
-        transaction,
-        guthaben: user.guthaben,
-        bargeldBalance: accountToUpdate.balance, // Rückgabe des aktualisierten Bargeld-Kontostands
-      }),
-      {
-        status: 201,
-        headers: { "Content-Type": "application/json" },
-      }
+      JSON.stringify({ transactions }),
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Fehler:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Fehler beim Abrufen der Transaktionen:", error);
+    return new Response(
+      JSON.stringify({ error: "Fehler beim Abrufen der Transaktionen" }),
+      { status: 500 }
+    );
   }
 }
 
-// GET Handler zum Abrufen aller Transaktionen für den Benutzer
-export async function GET(req) {
+export async function POST(req) {
   try {
-    const id = "67813eb85712ee7896043f77"; // Benutzer-ID (dies kann auch dynamisch gemacht werden)
-    console.log("API-Request gestartet");
+    await dbConnect(); // Verbindung zur Datenbank herstellen
 
-    // Verbindung zur Datenbank herstellen
-    await dbConnect();
-    console.log("Datenbank verbunden");
+    // Transaktionsdetails und Benutzer-ID aus der Anfrage extrahieren
+    const { amount, type, details, userId, accountName } = await req.json(); // `accountName` für das benutzte Konto
 
-    // Alle Transaktionen des Benutzers abrufen
-    const transactions = await Transaction.find();
-
-    if (!transactions || transactions.length === 0) {
-      throw new Error("Keine Transaktionen gefunden.");
+    // Überprüfen, ob die Benutzer-ID existiert
+    const user = await User.findOne({ user: userId });
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), { status: 404 });
     }
 
-    console.log("Transaktionen abgerufen:", transactions);
+    // Das entsprechende Account-Objekt aus dem `accounts` Array finden
+    const account = user.accounts.find(acc => acc.name === accountName);
+
+    if (!account) {
+      return new Response(JSON.stringify({ error: "Account nicht gefunden" }), { status: 404 });
+    }
+
+    // Balance des gefundenen Accounts erhöhen
+    account.balance += amount;
+
+    // Benutzerguthaben ebenfalls aktualisieren
+    user.guthaben += amount;
+
+    // Neue Transaktion erstellen und Benutzer referenzieren
+    const newTransaction = new Transaction({
+      accounts: accountName, // Hier kannst du das Konto speichern, auf dem die Transaktion ausgeführt wurde
+      amount,
+      type,
+      details,
+      user: user._id, // Verknüpft die Transaktion mit dem Benutzer
+    });
+
+    // Benutzer speichern
+    await user.save();
+
+    // Transaktion speichern
+    await newTransaction.save();
 
     // Erfolgreiche Antwort zurückgeben
-    return new Response(
-      JSON.stringify({
-        transactions,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ message: "Transaktion erfolgreich gespeichert!" }), { status: 201 });
   } catch (error) {
-    console.error("Fehler:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Fehler beim Speichern der Transaktion:", error);
+    return new Response(JSON.stringify({ error: "Fehler beim Speichern der Transaktion" }), { status: 500 });
   }
 }

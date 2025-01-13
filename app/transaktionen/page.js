@@ -1,16 +1,25 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { getAuth } from "@/lib/firebase";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]); // Zustand für die Transaktionen
   const [loading, setLoading] = useState(true); // Zustand für das Laden
   const [error, setError] = useState(null); // Zustand für Fehler
 
+  // Authentifizierter Benutzer
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   useEffect(() => {
     async function fetchTransactions() {
       try {
-        const response = await fetch("/api/transaction", {
+        if (!user) throw new Error("Benutzer nicht authentifiziert.");
+
+        const userId = user.uid;
+
+        const response = await fetch(`/api/transaction?userId=${userId}`, {
           method: "GET", // Sicherstellen, dass die Methode GET verwendet wird
         });
 
@@ -28,7 +37,7 @@ export default function Transactions() {
     }
 
     fetchTransactions(); // Transaktionen abrufen
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -44,40 +53,40 @@ export default function Transactions() {
 
   return (
     <ProtectedRoute>
-    <div className="pt-14 px-5">
-      <h3 className="text-2xl text-white mb-6">Transaktionsübersicht</h3>
+      <div className="pt-14 px-5">
+        <h3 className="text-2xl text-white mb-6">Transaktionsübersicht</h3>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-gray-800 text-white rounded-lg">
-          <thead>
-            <tr>
-              <th className="px-4 py-2 border-b">Betrag</th>
-              <th className="px-4 py-2 border-b">Transaktionstyp</th>
-              <th className="px-4 py-2 border-b">Details</th>
-              <th className="px-4 py-2 border-b">Erstellt am</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((transaction) => (
-              <tr key={transaction._id} className="hover:bg-gray-700">
-                <td className="px-4 py-2 border-b">{transaction.amount} €</td>
-                <td className="px-4 py-2 border-b">
-                  {transaction.type === "add" ? (
-                    <span className="text-green-500">Einnahme</span>
-                  ) : (
-                    <span className="text-red-500">Ausgabe</span>
-                  )}
-                </td>
-                <td className="px-4 py-2 border-b">{transaction.details}</td>
-                <td className="px-4 py-2 border-b">
-                  {new Date(transaction.createdAt).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {transactions.map((transaction) => (
+            <div
+              key={transaction._id}
+              className="bg-gray-800 text-white rounded-lg shadow-md p-4 flex flex-col space-y-2"
+            >
+              <div className="text-lg font-semibold">
+                Betrag: {transaction.amount} €
+              </div>
+              <div className="text-lg">
+                Konto: {transaction.accounts}
+              </div>
+              <div>
+                Typ:{" "}
+                {transaction.type === "add" ? (
+                  <span className="text-green-500">Einnahme</span>
+                ) : (
+                  <span className="text-red-500">Ausgabe</span>
+                )}
+              </div>
+              <div>
+                Details: <span className="text-gray-300">{transaction.details}</span>
+              </div>
+              <div className="text-sm text-gray-400">
+                Erstellt am:{" "}
+                {new Date(transaction.createdAt).toLocaleString()}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
     </ProtectedRoute>
   );
 }

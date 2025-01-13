@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* app/globals.css */
+body {
+    font-family: var(--font-jetbrains-mono), monospace;
+  }
+  

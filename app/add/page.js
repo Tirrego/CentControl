@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../lib/firebase"; // Firebase auth importieren
 
 export default function Page() {
   const [amount, setAmount] = useState("");
@@ -8,30 +10,46 @@ export default function Page() {
   const [details, setDetails] = useState("");
   const [selectedAccount, setSelectedAccount] = useState("");
   const [accounts, setAccounts] = useState([]); // Zustand für die Konten
+  const [user, setUser] = useState(null); // Zustand für den aktuellen Benutzer
   const router = useRouter();
+
+  // Überprüfe, ob der Benutzer eingeloggt ist
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user); // Benutzer setzen, wenn angemeldet
+      } else {
+        setUser(null); // Benutzer zurücksetzen, wenn nicht angemeldet
+        alert("Bitte melde dich an!");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Konten laden
   useEffect(() => {
-    async function fetchAccounts() {
-      try {
-        const userId = "67813eb85712ee7896043f77"; // Benutzer-ID (Beispiel)
-        const response = await fetch(`/api/user/account?userId=${userId}`, {
-          method: "GET",
-        });
+    if (user) {
+      const fetchAccounts = async () => {
+        try {
+          const response = await fetch(`/api/user/account?userId=${user.uid}`, {
+            method: "GET",
+          });
 
-        if (!response.ok) {
-          throw new Error("Fehler beim Abrufen der Konten");
+          if (!response.ok) {
+            throw new Error("Fehler beim Abrufen der Konten");
+          }
+
+          const data = await response.json();
+          setAccounts(data.accounts || []); // Konten setzen
+        } catch (err) {
+          console.log(err.message);
         }
+      };
 
-        const data = await response.json();
-        setAccounts(data.accounts || []); // Konten setzen
-      } catch (err) {
-        console.log(err.message);
-      }
+      fetchAccounts();
     }
-
-    fetchAccounts();
-  }, []);
+  }, [user]);
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
@@ -44,33 +62,43 @@ export default function Page() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!amount || !transactionType || !selectedAccount) {
       alert("Bitte gib einen Betrag ein, wähle eine Transaktion und ein Konto aus.");
       return;
     }
-
+  
+    if (!user) {
+      alert("Bitte melde dich an!");
+      return;
+    }
+  
     try {
+
       const response = await fetch("/api/transaction", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
+          userId: user.uid,
           amount: parseFloat(amount),
           transactionType,
           details,
-          account: selectedAccount,
+          accountName: selectedAccount,
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error("Etwas ist schiefgelaufen.");
       }
-
+  
       router.push("/"); // Weiterleitung nach erfolgreichem Absenden
     } catch (error) {
       console.log(error);
     }
   };
+  
 
   return (
     <div className="flex flex-row justify-center">

@@ -1,11 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Button from "./Button";
+import {getAuth} from "../lib/firebase";
 
 function Einnahme() {
   const [accounts, setAccounts] = useState([]); // Zustand für die Konten
   const [loading, setLoading] = useState(true); // Zustand für das Laden
   const [error, setError] = useState(null); // Zustand für Fehler
+  
 
   // Gesamtguthaben berechnen
   const totalBalance = accounts.reduce((acc, account) => acc + account.balance, 0);
@@ -13,7 +15,9 @@ function Einnahme() {
   useEffect(() => {
     async function fetchAccounts() {
       try {
-        const userId = "67813eb85712ee7896043f77"; // Benutzer-ID (Beispiel)
+        const auth = getAuth();
+        const user = auth.currentUser
+        const userId = user.uid;
         const response = await fetch(`/api/user/account?userId=${userId}`, {
           method: "GET", // Sicherstellen, dass die Methode GET verwendet wird
         });
@@ -21,7 +25,7 @@ function Einnahme() {
         if (!response.ok) {
           throw new Error(`Fehler: ${response.status}`);
         }
-
+        console.log(user.uid);
         const data = await response.json();
         setAccounts(data.accounts || []); // Sicherstellen, dass accounts immer ein Array ist
       } catch (err) {

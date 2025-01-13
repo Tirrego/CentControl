@@ -1,97 +1,93 @@
 import dbConnect from "../../../../lib/mongoose";
 import User from "../../../../models/User";
 
-// Handle GET requests
+// GET: Abrufen der Konten des Benutzers
 export async function GET(req) {
-  await dbConnect();
-  const userId = "67813eb85712ee7896043f77"; // Example User ID, replace this with dynamic logic
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
-  const user = await User.findById(userId);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    await dbConnect();
+
+    // Benutzer anhand der ID finden
+    const user = await User.findOne({ user: userId });
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), { status: 404 });
+    }
+
+    // Konten des Benutzers zurückgeben
+    return new Response(JSON.stringify({ accounts: user.accounts }), { status: 200 });
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Konten:", error);
+    return new Response(JSON.stringify({ error: "Fehler beim Abrufen der Konten" }), { status: 500 });
   }
-
-  return new Response(JSON.stringify({ accounts: user.accounts }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
-// Handle POST requests
+// POST: Hinzufügen eines neuen Kontos
 export async function POST(req) {
-  await dbConnect();
-  const userId = "67813eb85712ee7896043f77"; // Example User ID, replace this with dynamic logic
+  try {
+    // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder Session)
+    const userId = req.headers.get("userId"); // Hier sollte die tatsächliche Benutzer-ID aus der Authentifizierung kommen
 
-  const user = await User.findById(userId);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    const { name } = await req.json();
+
+    if (!name) {
+      return new Response(JSON.stringify({ error: "Kontoname erforderlich" }), { status: 400 });
+    }
+
+    await dbConnect();
+
+    // Benutzer anhand der ID finden
+    const user = await User.findOne({ user: userId });
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), { status: 404 });
+    }
+
+    // Neues Konto hinzufügen
+    user.accounts.push({ name, balance: 0 });
+
+    // Benutzer speichern
+    await user.save();
+
+    return new Response(JSON.stringify({ accounts: user.accounts }), { status: 201 });
+  } catch (error) {
+    console.error("Fehler beim Hinzufügen des Kontos:", error);
+    return new Response(JSON.stringify({ error: "Fehler beim Hinzufügen des Kontos" }), { status: 500 });
   }
-
-  const body = await req.json();
-  const { name } = body;
-
-  // Validate input
-  if (!name) {
-    return new Response(JSON.stringify({ error: "Account name is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Check if the account already exists
-  if (user.accounts.some((account) => account.name === name)) {
-    return new Response(JSON.stringify({ error: "Account already exists" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Add the new account
-  user.accounts.push({ name, balance: 0 });
-  await user.save();
-
-  return new Response(JSON.stringify({ accounts: user.accounts }), {
-    status: 201,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
-// Handle DELETE requests
+// DELETE: Löschen eines Kontos
 export async function DELETE(req) {
-  await dbConnect();
-  const userId = "67813eb85712ee7896043f77"; // Example User ID, replace this with dynamic logic
+  try {
+    // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder der Session)
+    const userId = req.headers.get("userId"); // Hier sollte die tatsächliche Benutzer-ID aus der Authentifizierung kommen
 
-  const user = await User.findById(userId);
-  if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    const { name } = await req.json();
+
+    if (!name) {
+      return new Response(JSON.stringify({ error: "Kontoname erforderlich" }), { status: 400 });
+    }
+
+    await dbConnect();
+
+    // Benutzer anhand der ID finden
+    const user = await User.findOne({ user: userId });
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Benutzer nicht gefunden" }), { status: 404 });
+    }
+
+    // Konto löschen
+    user.accounts = user.accounts.filter(account => account.name !== name);
+
+    // Benutzer speichern
+    await user.save();
+
+    return new Response(JSON.stringify({ accounts: user.accounts }), { status: 200 });
+  } catch (error) {
+    console.error("Fehler beim Löschen des Kontos:", error);
+    return new Response(JSON.stringify({ error: "Fehler beim Löschen des Kontos" }), { status: 500 });
   }
-
-  const body = await req.json();
-  const { name } = body;
-
-  // Validate input
-  if (!name) {
-    return new Response(JSON.stringify({ error: "Account name is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Remove the account
-  user.accounts = user.accounts.filter((account) => account.name !== name);
-  await user.save();
-
-  return new Response(JSON.stringify({ accounts: user.accounts }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }

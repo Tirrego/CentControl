@@ -16,6 +16,7 @@ export default function Header() {
     } catch (error) {
       console.error("Logout failed:", error.message);
     }
+    toggleMenu();
   };
 
   const toggleMenu = () => {
@@ -59,12 +60,12 @@ export default function Header() {
           </button>
 
           <div className="flex flex-col space-y-4 text-white text-xl">
-            <Link
-              href="/login"
+          <Link
+              href="/"
               onClick={() => setIsMenuOpen(false)}
-              className="bg-blue-600 hover:bg-blue-700 rounded-lg py-3 px-6 text-center transition-all"
+              className="bg-green-600 hover:bg-green-700 rounded-lg py-3 px-6 text-center transition-all"
             >
-              Anmelden
+              Dashboard
             </Link>
             <Link
               href="/account"

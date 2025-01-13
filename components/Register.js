@@ -19,16 +19,21 @@ export default function Register() {
     }
 
     try {
-      setError(null); // Clear previous errors
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.log("Registered user:", userCredential.user);
+     // Benutzer in MongoDB speichern
+      await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          password: password,
+          email: email,
+        }),
+      });
+
       router.push("/"); // Weiterleitung zur Startseite nach erfolgreicher Registrierung
     } catch (error) {
-      console.error("Registration failed:", error.message);
+      console.error("Registrierung fehlgeschlagen:", error.message);
       setError("Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.");
     }
   };
