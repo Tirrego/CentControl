@@ -61,7 +61,7 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Account nicht gefunden" }), { status: 404 });
     }
 
-    if(transactionType) {
+    if(transactionType == "add") {
 
     account.balance += amount;
     user.guthaben += amount;
