@@ -28,7 +28,8 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder Session)
-    const userId = req.headers.get("userId"); // Hier sollte die tatsächliche Benutzer-ID aus der Authentifizierung kommen
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
     const { name } = await req.json();
 
@@ -62,7 +63,8 @@ export async function POST(req) {
 export async function DELETE(req) {
   try {
     // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder der Session)
-    const userId = req.headers.get("userId"); // Hier sollte die tatsächliche Benutzer-ID aus der Authentifizierung kommen
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
     const { name } = await req.json();
 
