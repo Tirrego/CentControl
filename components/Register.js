@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { auth, sendEmailVerification } from "../lib/firebase";
 import { useRouter } from "next/navigation";
 
 export default function Register() {
@@ -30,7 +30,8 @@ export default function Register() {
           email: email,
         }),
       });
-
+      ;
+   
       router.push("/"); // Weiterleitung zur Startseite nach erfolgreicher Registrierung
     } catch (error) {
       console.error("Registrierung fehlgeschlagen:", error.message);

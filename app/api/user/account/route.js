@@ -1,5 +1,6 @@
 import dbConnect from "../../../../lib/mongoose";
 import User from "../../../../models/User";
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth"; // Firebase Auth importieren
 
 // GET: Abrufen der Konten des Benutzers
 export async function GET(req) {
@@ -24,22 +25,31 @@ export async function GET(req) {
   }
 }
 
-// POST: Hinzufügen eines neuen Kontos
+// POST: Benutzer registrieren und Konto hinzufügen
 export async function POST(req) {
   try {
-    // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder Session)
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
-    const { name } = await req.json();
+    const { email, password, name } = await req.json();
 
-    if (!name) {
-      return new Response(JSON.stringify({ error: "Kontoname erforderlich" }), { status: 400 });
+    if (!email || !password || !name) {
+      return new Response(JSON.stringify({ error: "E-Mail, Passwort und Kontoname sind erforderlich" }), { status: 400 });
     }
+
+    // Firebase Auth-Objekt erhalten
+    const auth = getAuth();
+
+    // Benutzer über Firebase registrieren
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const firebaseUser = userCredential.user;
+
+    // E-Mail-Verifizierung über Firebase senden
+    await sendEmailVerification(firebaseUser);
 
     await dbConnect();
 
-    // Benutzer anhand der ID finden
+    // Benutzer anhand der ID aus der MongoDB-Datenbank finden
     const user = await User.findOne({ user: userId });
 
     if (!user) {
@@ -54,15 +64,14 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ accounts: user.accounts }), { status: 201 });
   } catch (error) {
-    console.error("Fehler beim Hinzufügen des Kontos:", error);
-    return new Response(JSON.stringify({ error: "Fehler beim Hinzufügen des Kontos" }), { status: 500 });
+    console.error("Fehler bei der Registrierung und beim Hinzufügen des Kontos:", error);
+    return new Response(JSON.stringify({ error: "Fehler bei der Registrierung und beim Hinzufügen des Kontos" }), { status: 500 });
   }
 }
 
 // DELETE: Löschen eines Kontos
 export async function DELETE(req) {
   try {
-    // Benutzer-ID aus der Anfrage extrahieren (z.B. aus dem Token oder der Session)
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 

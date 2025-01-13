@@ -40,7 +40,7 @@ export async function POST(req) {
 
     // Benutzer in der Datenbank speichern
     await newUser.save();
-
+    
     // Erfolgreiche Antwort zurückgeben
     return new Response(
       JSON.stringify({ message: "Benutzer erfolgreich erstellt!" }),
