@@ -1,16 +1,22 @@
 import dbConnect from "../../../../lib/mongoose";
 import User from "../../../../models/User";
-import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth"; // Firebase Auth importieren
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
 // GET: Abrufen der Konten des Benutzers
 export async function GET(req) {
   try {
+    // userId aus der URL als Query-Parameter extrahieren
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Benutzer-ID fehlt" }), { status: 400 });
+    }
+
+    // Verbindung zur MongoDB herstellen
     await dbConnect();
 
-    // Benutzer anhand der ID finden
+    // Benutzer anhand des userId finden
     const user = await User.findOne({ user: userId });
 
     if (!user) {
@@ -25,31 +31,27 @@ export async function GET(req) {
   }
 }
 
-// POST: Benutzer registrieren und Konto hinzufügen
+// POST: Neues Konto für den Benutzer hinzufügen
 export async function POST(req) {
   try {
+    // userId aus der URL als Query-Parameter extrahieren
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
-    const { email, password, name } = await req.json();
-
-    if (!email || !password || !name) {
-      return new Response(JSON.stringify({ error: "E-Mail, Passwort und Kontoname sind erforderlich" }), { status: 400 });
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Benutzer-ID fehlt" }), { status: 400 });
     }
 
-    // Firebase Auth-Objekt erhalten
-    const auth = getAuth();
+    const { name } = await req.json();
 
-    // Benutzer über Firebase registrieren
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+    if (!name) {
+      return new Response(JSON.stringify({ error: "Kontoname erforderlich" }), { status: 400 });
+    }
 
-    // E-Mail-Verifizierung über Firebase senden
-    await sendEmailVerification(firebaseUser);
-
+    // Verbindung zur MongoDB herstellen
     await dbConnect();
 
-    // Benutzer anhand der ID aus der MongoDB-Datenbank finden
+    // Benutzer anhand des userId finden
     const user = await User.findOne({ user: userId });
 
     if (!user) {
@@ -64,16 +66,21 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ accounts: user.accounts }), { status: 201 });
   } catch (error) {
-    console.error("Fehler bei der Registrierung und beim Hinzufügen des Kontos:", error);
-    return new Response(JSON.stringify({ error: "Fehler bei der Registrierung und beim Hinzufügen des Kontos" }), { status: 500 });
+    console.error("Fehler beim Hinzufügen des Kontos:", error);
+    return new Response(JSON.stringify({ error: "Fehler beim Hinzufügen des Kontos" }), { status: 500 });
   }
 }
 
 // DELETE: Löschen eines Kontos
 export async function DELETE(req) {
   try {
+    // userId aus der URL als Query-Parameter extrahieren
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Benutzer-ID fehlt" }), { status: 400 });
+    }
 
     const { name } = await req.json();
 
@@ -81,9 +88,10 @@ export async function DELETE(req) {
       return new Response(JSON.stringify({ error: "Kontoname erforderlich" }), { status: 400 });
     }
 
+    // Verbindung zur MongoDB herstellen
     await dbConnect();
 
-    // Benutzer anhand der ID finden
+    // Benutzer anhand des userId finden
     const user = await User.findOne({ user: userId });
 
     if (!user) {

@@ -48,11 +48,10 @@ export default function AccountsPage() {
 
       const userId = user.uid;
 
-      const response = await fetch("/api/user/account", {
+      const response = await fetch(`/api/user/account?userId=${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          userId: userId, // userId wird im Header mitgeschickt
         },
         body: JSON.stringify({ name: newAccountName }),
       });
@@ -73,11 +72,10 @@ export default function AccountsPage() {
 
       const userId = user.uid;
 
-      const response = await fetch("/api/user/account", {
+      const response = await fetch(`/api/user/account?userId=${userId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          userId: userId, // userId wird im Header mitgeschickt
         },
         body: JSON.stringify({ name: accountName }),
       });
